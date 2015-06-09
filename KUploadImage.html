@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<style>
+			.kup input[type=file]{display: none;}
+			.kup label{display: block;}
+			.kup form{display: none;}
+			.imgpre img{max-width:120px; max-height: 100px;}
+			.imgpre .del{position: absolute;height: 20px;width:20px; float: right; color:#fff; border:1px solid #ccc; text-align: center;font-style: normal; }
+		</style>
+	</head>
+	<body>
+		
+		<div class="kup" id="KUploadImage"> 
+			<input id="fileinput" name="files" type="file" multiple="multiple" value="" />
+			<label for="fileinput">选择文件</label>
+			
+		</div>
+		
+		<div id="outer" class="imgpre">
+			<span><i class="del">X</i><img src="http://p4.qhimg.com/t0102de567ff6e15b52.jpg"></span>
+			<span><i class="del">X</i><img src="http://p9.qhimg.com/t01507af0a529d71690.png"></span>
+		</div>
+		<button id="submit">提交</button>
+<script type="text/javascript">
+/*
+ * KUploadImage基于html5，用原生JS实现的异步图片上传
+ * 
+ */
+
+(function(win){
+	var KUploadImage={};
+	var kup=KUploadImage;
+	KUploadImage.version="1.0.0";
+	KUploadImage.addFile=function(files){
+		if(files.length>0){
+			for(var i=0;i<files.length; i++){
+				var file=files[i];
+				var sf={
+					name:file.name,
+					size:file.size,
+					type:file.type
+				}
+				if(kup.checkfile){
+					if(kup.filterfile(file)){
+						continue;
+					}
+				}
+				sf.index=kup.selectFileIndex;
+				kup.selectFile.push(sf);
+				var reader=new FileReader();
+				reader.onload = function(e) {
+					var imgdiv = document.createElement("span");
+					imgdiv.setAttribute("index",1);
+					var i=document.createElement("i");
+					i.innerHTML="X";
+					i.className="del";
+					imgdiv.appendChild(i);
+				    var img = new Image();
+				    img.src = reader.result;
+				    imgdiv.appendChild(img);
+				   	kup.outerDom.appendChild(imgdiv);
+				   	kup.selectFileIndex++;
+				 }
+			  	reader.readAsDataURL(file);
+			}
+			
+		}
+	}
+	var ajax=function(postdata,binary){
+		var query="";
+		for(var i in postdata){
+			query += i+"="+postdata[i]+"&";
+		}
+		var url=kup.url+"?"+encodeURIComponent(query);
+		var type="POST";
+		var async=false;
+		var xmlhttp=new XMLHttpRequest();
+		xmlhttp.setRequestHeader('Content-Type', "multipart/form-data");
+		xmlhttp.onreadystatechange=function(){
+		  if (xmlhttp.readyState==4 && xmlhttp.status==200){
+		    	kup.selectFileIndex--;
+		    	if(kup.selectFileIndex == 0){
+		    		kup.completeupload();
+		    	}
+		  }else{
+		  	 console.log("Error " + xmlhttp.status + " occurred uploading your file");
+		  }
+		 
+		}
+		xmlhttp.open(type,url,async);
+		xmlhttp.send(postdata);
+	}
+	KUploadImage.UploadFile=function(){
+		kup.beforeupload();
+		var imgs = kup.outerDom.getElementsByTagName("img");
+		var l = imgs.length;
+		for(var i=0; i<l; i++){
+			var postdata={
+				name: kup.selectFile[i].name,
+				size:kup.selectFile[i].size,
+				type:kup.selectFile[i].type
+			}
+			var reader=new FileReader();
+			reader.onload = function(e) {
+				ajax(postdata,reader.result);
+			}
+		  	reader.readAsBinaryString(imgs[i].src);
+		}
+	}
+	
+	KUploadImage.init=function(param){
+		kup.kupDom=param.KUploadImage;
+		kup.fileinput=param.fileinput;
+		kup.outerDom=param.outerDom;
+		kup.url=param.url;
+		kup.complete=param.complete||function(){};
+		kup.beforsend=param.beforsend||function(){};
+		kup.selectimg=param.selectimg||function(){};
+		kup.selectFile=[];
+		kup.selectFileIndex=0;
+		kup.fileinput.addEventListener("change",function(e){
+			kup.addFile(this.files);
+		});
+		kup.outerDom.addEventListener("click",function(e){
+			if(e.target.className.indexOf("del")>-1){
+				var imgdiv = e.target.parentNode;
+				imgdiv.parentNode.removeChild(imgdiv);
+				kup.selectFileIndex--;
+			}
+		});
+	}
+	window.KUploadImage=KUploadImage;
+}(window));
+</script>
+<script>
+	var div=document.getElementById("KUploadImage");
+	var fileinput=document.getElementById("fileinput");
+	var outer=document.getElementById("outer");
+	KUploadImage.init({
+		url:"Group/uploadPicture",
+		KUploadImage:div,
+		fileinput:fileinput,
+		outerDom:outer,
+		filterfile:function(file){
+			//返回ture 滤除此文件，返回false 保留此文件
+			var isfind=true;
+			for(var j=0; j<KUploadImage.selectFile.length; j++ ){
+				if(file.name == KUploadImage.selectFile[j].name){
+					isfind=true;
+					break;
+				}
+			}
+			return isfind;
+		},
+		beforeupload:function(){
+			
+		},
+		completeupload:function(){
+			
+		}
+	});
+</script>
+	</body>
+</html>
