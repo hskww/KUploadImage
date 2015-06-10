@@ -20,15 +20,22 @@
 		</div>
 		
 		<div id="outer" class="imgpre">
-			<span><i class="del">X</i><img src="http://p4.qhimg.com/t0102de567ff6e15b52.jpg"></span>
-			<span><i class="del">X</i><img src="http://p9.qhimg.com/t01507af0a529d71690.png"></span>
+			
 		</div>
 		<button id="submit">提交</button>
 <script type="text/javascript">
 /*
  * KUploadImage基于html5，用原生JS实现的异步图片上传
+ * 使用方法KUploadImage.init(param)
+ * @params
+ * 	url:"/File/upload",//上传路径，字符串，必需
+	fileinput:fileinput,//上传文件元素,必需
+	outerDom:outer,//展现图片容器，必需
+	filterfile:function(file){},// 返回ture 滤除此文件，返回false 保留此文件，可选
+	beforeupload:function(){},//上传之前回调 可选
+	completeupload:function(){}//完成上传回调 可选
  * 
- */
+ **/
 
 (function(win){
 	var KUploadImage={};
@@ -69,6 +76,7 @@
 			
 		}
 	}
+	var sucesscount=0,failedcount=0;
 	var ajax=function(postdata,binary){
 		var query="";
 		for(var i in postdata){
@@ -80,18 +88,23 @@
 		var xmlhttp=new XMLHttpRequest();
 		xmlhttp.setRequestHeader('Content-Type', "multipart/form-data");
 		xmlhttp.onreadystatechange=function(){
-		  if (xmlhttp.readyState==4 && xmlhttp.status==200){
-		    	kup.selectFileIndex--;
+		 if (xmlhttp.readyState==4){
+		 	kup.selectFileIndex--;
+		 	if(xmlhttp.status==200){
+		 		sucesscount++;
 		    	if(kup.selectFileIndex == 0){
+		    	console.log("成功上传 " + sucesscount + " 个，失败"+failedcount+"个");
 		    		kup.completeupload();
 		    	}
-		  }else{
-		  	 console.log("Error " + xmlhttp.status + " occurred uploading your file");
-		  }
-		 
+		 	}else{
+		 		failedcount--;
+		  	 	console.log("错误 " + xmlhttp.status + " 上传文件发现错误,文件名"+postdata.name);
+		 	}
+		 }
+		
 		}
 		xmlhttp.open(type,url,async);
-		xmlhttp.send(postdata);
+		xmlhttp.send(binary);
 	}
 	KUploadImage.UploadFile=function(){
 		kup.beforeupload();
@@ -112,7 +125,7 @@
 	}
 	
 	KUploadImage.init=function(param){
-		kup.kupDom=param.KUploadImage;
+		
 		kup.fileinput=param.fileinput;
 		kup.outerDom=param.outerDom;
 		kup.url=param.url;
@@ -136,12 +149,10 @@
 }(window));
 </script>
 <script>
-	var div=document.getElementById("KUploadImage");
 	var fileinput=document.getElementById("fileinput");
 	var outer=document.getElementById("outer");
 	KUploadImage.init({
 		url:"Group/uploadPicture",
-		KUploadImage:div,
 		fileinput:fileinput,
 		outerDom:outer,
 		filterfile:function(file){
