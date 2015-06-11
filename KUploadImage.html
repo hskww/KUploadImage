@@ -1,178 +1,269 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 		<title></title>
 		<style>
-			.kup input[type=file]{display: none;}
-			.kup label{display: block;}
-			.kup form{display: none;}
-			.imgpre img{max-width:120px; max-height: 100px;}
-			.imgpre .del{position: absolute;height: 20px;width:20px; float: right; color:#fff; border:1px solid #ccc; text-align: center;font-style: normal; }
+			.kup input[type=file] {
+				display: none;
+			}
+			.kup label {
+				display: block;
+			}
+			.kup form {
+				display: none;
+			}
+			.imgpre img {
+				max-width: 120px;
+				max-height: 100px;
+			}
+			.imgpre .del {
+				position: absolute;
+				height: 20px;
+				width: 20px;
+				float: right;
+				color: #fff;
+				border: 1px solid #ccc;
+				text-align: center;
+				font-style: normal;
+			}
 		</style>
 	</head>
-	<body>
-		
-		<div class="kup" id="KUploadImage"> 
-			<input id="fileinput" name="files" type="file" multiple="multiple" value="" />
-			<label for="fileinput">选择文件</label>
-			
-		</div>
-		
-		<div id="outer" class="imgpre">
-			
-		</div>
-		<button id="submit">提交</button>
-<script type="text/javascript">
-/*
- * KUploadImage基于html5，用原生JS实现的异步图片上传
- * 使用方法KUploadImage.init(param)
- * @params
- * 	url:"/File/upload",//上传路径，字符串，必需
-	fileinput:fileinput,//上传文件元素,必需
-	outerDom:outer,//展现图片容器，必需
-	filterfile:function(file){},// 返回ture 滤除此文件，返回false 保留此文件，可选
-	beforeupload:function(){},//上传之前回调 可选
-	completeupload:function(){}//完成上传回调 可选
- * 
- **/
 
-(function(win){
-	var KUploadImage={};
-	var kup=KUploadImage;
-	KUploadImage.version="1.0.0";
-	KUploadImage.addFile=function(files){
-		if(files.length>0){
-			for(var i=0;i<files.length; i++){
-				var file=files[i];
-				var sf={
-					name:file.name,
-					size:file.size,
-					type:file.type
+	<body>
+
+		<div class="kup" id="KUploadImage">
+			<input id="fileinput" name="files" type="file" multiple="multiple" value="" />
+			<label for="fileinput">选择文件1</label>
+
+		</div>
+
+		<div id="outer" class="imgpre">
+
+		</div>
+		<button id="submit">提交1</button>
+
+		<div class="kup">
+			<input id="fileinput2" name="files" type="file" multiple="multiple" value="" />
+			<label for="fileinput2">选择文件2</label>
+
+		</div>
+
+		<div id="outer2" class="imgpre">
+
+		</div>
+
+		<script type="text/javascript">
+			/*
+			 * KUploadImage基于html5，用原生JS实现的异步图片上传
+			 * 使用方法new KUploadImage(param);
+			 * @params
+			 * 	url:"/File/upload",//上传路径，字符串，必需
+				fileinput:fileinput,//上传文件元素,必需
+				outerDom:outer,//展现图片容器，必需
+				filterfile:function(file){},// 返回ture 滤除此文件，返回false 保留此文件，可选
+				beforeupload:function(){},//上传之前回调 可选
+				completeupload:function(){}//完成上传回调 可选
+			 * 
+			 **/
+			(function(win) {
+				//检查支持浏览器情况
+				if(!FileReader){
+					console.log("FileReader  failed!");
+					return;
 				}
-				if(kup.checkfile){
-					if(kup.filterfile(file)){
-						continue;
+				if(!atob){
+					console.log("atob  failed!");
+					return;
+				}
+				if(!Blob){
+					console.log("Blob  failed!");
+					return;
+				}
+				function KUploadImage(param) {
+					var kup = this;
+					kup.fileinput = param.fileinput;
+					kup.outerDom = param.outerDom;
+					kup.url = param.url;
+					kup.completeupload = param.completeupload || function() {};
+					kup.beforeupload = param.beforeupload || function() {};
+					kup.filterfile = param.filterfile || function() {};
+					kup.selectFile = {};
+					kup.selectFileIndex = 0;
+					kup.bindEvent();
+				}
+				KUploadImage.version = "1.0.0";
+				
+				KUploadImage.prototype.bindEvent=function(){
+					var kup = this;
+					kup.fileinput.addEventListener("change", function(e) {
+						kup.addFile(this.files);
+					});
+					kup.outerDom.addEventListener("click", function(e) {
+						if (e.target.className.indexOf("del") > -1) {
+							var imgdiv = e.target.parentNode;
+							imgdiv.parentNode.removeChild(imgdiv);
+						}
+					});
+				}
+				KUploadImage.prototype.addFile = function(files) {
+					var kup = this;
+					if (files.length > 0) {
+						for (var i = 0; i < files.length; i++) {
+							var file = files[i];
+							var sf = {
+								name: file.name,
+								size: file.size,
+								type: file.type
+							}
+							if (kup.checkfile) {
+								if (kup.filterfile(file)) {
+									continue;
+								}
+							}
+							sf.index = kup.selectFileIndex;
+							kup.selectFile[kup.selectFileIndex]=sf;
+							var reader = new FileReader();
+							reader.onload = function(e) {
+								var imgdiv = document.createElement("span");
+								imgdiv.setAttribute("index", kup.selectFileIndex);
+								var i = document.createElement("i");
+								i.innerHTML = "X";
+								i.className = "del";
+								imgdiv.appendChild(i);
+								var img = new Image();
+								img.src = reader.result;
+								imgdiv.appendChild(img);
+								kup.outerDom.appendChild(imgdiv);
+								kup.selectFileIndex++;
+							}
+							reader.readAsDataURL(file);
+						}
 					}
 				}
-				sf.index=kup.selectFileIndex;
-				kup.selectFile.push(sf);
-				var reader=new FileReader();
-				reader.onload = function(e) {
-					var imgdiv = document.createElement("span");
-					imgdiv.setAttribute("index",1);
-					var i=document.createElement("i");
-					i.innerHTML="X";
-					i.className="del";
-					imgdiv.appendChild(i);
-				    var img = new Image();
-				    img.src = reader.result;
-				    imgdiv.appendChild(img);
-				   	kup.outerDom.appendChild(imgdiv);
-				   	kup.selectFileIndex++;
-				 }
-			  	reader.readAsDataURL(file);
-			}
-			
-		}
-	}
-	var sucesscount=0,failedcount=0;
-	var ajax=function(postdata,binary){
-		var query="";
-		for(var i in postdata){
-			query += i+"="+postdata[i]+"&";
-		}
-		var url=kup.url+"?"+encodeURIComponent(query);
-		var type="POST";
-		var async=false;
-		var xmlhttp=new XMLHttpRequest();
-		xmlhttp.setRequestHeader('Content-Type', "multipart/form-data");
-		xmlhttp.onreadystatechange=function(){
-		 if (xmlhttp.readyState==4){
-		 	kup.selectFileIndex--;
-		 	if(xmlhttp.status==200){
-		 		sucesscount++;
-		    	if(kup.selectFileIndex == 0){
-		    	console.log("成功上传 " + sucesscount + " 个，失败"+failedcount+"个");
-		    		kup.completeupload();
-		    	}
-		 	}else{
-		 		failedcount--;
-		  	 	console.log("错误 " + xmlhttp.status + " 上传文件发现错误,文件名"+postdata.name);
-		 	}
-		 }
-		
-		}
-		xmlhttp.open(type,url,async);
-		xmlhttp.send(binary);
-	}
-	KUploadImage.UploadFile=function(){
-		kup.beforeupload();
-		var imgs = kup.outerDom.getElementsByTagName("img");
-		var l = imgs.length;
-		for(var i=0; i<l; i++){
-			var postdata={
-				name: kup.selectFile[i].name,
-				size:kup.selectFile[i].size,
-				type:kup.selectFile[i].type
-			}
-			var reader=new FileReader();
-			reader.onload = function(e) {
-				ajax(postdata,reader.result);
-			}
-		  	reader.readAsBinaryString(imgs[i].src);
-		}
-	}
-	
-	KUploadImage.init=function(param){
-		
-		kup.fileinput=param.fileinput;
-		kup.outerDom=param.outerDom;
-		kup.url=param.url;
-		kup.complete=param.complete||function(){};
-		kup.beforsend=param.beforsend||function(){};
-		kup.selectimg=param.selectimg||function(){};
-		kup.selectFile=[];
-		kup.selectFileIndex=0;
-		kup.fileinput.addEventListener("change",function(e){
-			kup.addFile(this.files);
-		});
-		kup.outerDom.addEventListener("click",function(e){
-			if(e.target.className.indexOf("del")>-1){
-				var imgdiv = e.target.parentNode;
-				imgdiv.parentNode.removeChild(imgdiv);
-				kup.selectFileIndex--;
-			}
-		});
-	}
-	window.KUploadImage=KUploadImage;
-}(window));
-</script>
-<script>
-	var fileinput=document.getElementById("fileinput");
-	var outer=document.getElementById("outer");
-	KUploadImage.init({
-		url:"Group/uploadPicture",
-		fileinput:fileinput,
-		outerDom:outer,
-		filterfile:function(file){
-			//返回ture 滤除此文件，返回false 保留此文件
-			var isfind=true;
-			for(var j=0; j<KUploadImage.selectFile.length; j++ ){
-				if(file.name == KUploadImage.selectFile[j].name){
-					isfind=true;
-					break;
+				KUploadImage.prototype.UploadFile = function() {
+					var kup = this;
+					kup.beforeupload();
+					var imgs = kup.outerDom.getElementsByTagName("img");
+					var l = imgs.length;
+					var imgcount=l;
+					var sucesscount = 0,
+						failedcount = 0;
+					
+					for (var i = 0; i < l; i++) {
+						var index = imgs[i].parentNode.getAttribute("index");
+						var postdata = {
+							name: kup.selectFile[index].name,
+							size: kup.selectFile[index].size,
+							type: kup.selectFile[index].type
+						}
+						var binary = dataURItoBinary(imgs[i].src);
+						ajaxPost(kup.url,postdata, binary,function(xmlhttp){
+							imgcount--;
+								if (xmlhttp.status == 200) {
+									sucesscount++;
+								} else {
+									failedcount--;
+									console.log("错误 " + xmlhttp.status + " 上传文件发现错误,文件名" + postdata.name);
+								}
+								if (imgcount == 0) {
+									console.log("成功上传 " + sucesscount + " 个，失败" + failedcount + "个");
+									kup.completeupload();
+								}
+						});
+					}
 				}
-			}
-			return isfind;
-		},
-		beforeupload:function(){
+				/*
+				 * ajax提交
+				 *  @params
+				 * url,提交路径Url
+				 * postdata,提交其它数据
+				 * binary，要提交的文件流
+				 * callback，请求完成后的回调，传入XMLHttpRequest对象
+				 */
+				
+				function ajaxPost(url,postdata,binary,callback) {
+					var query = "";
+					for (var i in postdata) {
+						query += i + "=" + postdata[i] + "&";
+					}
+					var url =url + "?" + encodeURIComponent(query);
+					var type = "POST";
+					var async = false;
+					var xmlhttp = new XMLHttpRequest();
+					
+					xmlhttp.onreadystatechange = function() {
+						if (xmlhttp.readyState == 4) {
+							callback && callback(xmlhttp);
+						}
+					}
+					xmlhttp.open(type, url, async);
+					xmlhttp.setRequestHeader('Content-Type', "multipart/form-data");
+					xmlhttp.send(binary);
+				}
+				//dataURI转成文件流
+				function dataURItoBinary(dataURI){
+					// convert base64/URLEncoded data component to raw binary data held in a string
+				    var byteString;
+				    if (dataURI.split(',')[0].indexOf('base64') >= 0)
+				        byteString = atob(dataURI.split(',')[1]);
+				    else
+				        byteString = unescape(dataURI.split(',')[1]);
+				    return byteString;
+				}
+				//dataURI转成Blob对象	
+				function dataURItoBlob(dataURI) {
+				    var byteString = dataURItoBinary(dataURI);
+				    // separate out the mime component
+				    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+				    // write the bytes of the string to a typed array
+				    var ia = new Uint8Array(byteString.length);
+				    for (var i = 0; i < byteString.length; i++) {
+				        ia[i] = byteString.charCodeAt(i);
+				    }
+				    return new Blob([ia], {type:mimeString});
+				}
+				
+				
+				window.KUploadImage = KUploadImage;
+			}(window));
+		</script>
+		<script>
+			var fileinput = document.getElementById("fileinput");
+			var outer = document.getElementById("outer");
+			var myupload = new KUploadImage({
+				url: "/",
+				fileinput: fileinput,
+				outerDom: outer,
+				filterfile: function(file) {
+					//返回ture 滤除此文件，返回false 保留此文件
+					var isfind = true;
+					for (var j = 0; j < KUploadImage.selectFile.length; j++) {
+						if (file.name == KUploadImage.selectFile[j].name) {
+							isfind = true;
+							break;
+						}
+					}
+					return isfind;
+				},
+				beforeupload: function() {},
+				completeupload: function() {}
+			});
 			
-		},
-		completeupload:function(){
+			submit.addEventListener("click",function(){
+				myupload.UploadFile();
+			})
 			
-		}
-	});
-</script>
+			var fileinput2 = document.getElementById("fileinput2");
+			var outer2 = document.getElementById("outer2");
+			var myupload2= new KUploadImage({
+				url: "/uploadPicture",
+				fileinput: fileinput2,
+				outerDom: outer2
+			})
+		</script>
 	</body>
+
 </html>
